@@ -25,15 +25,44 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
 Eigen::Matrix4f get_model_matrix(float rotation_angle)
 {
     Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
+    float rotation_radian = rotation_angle / 180 * MY_PI;
+    float cosine_value = std::cos(rotation_radian);
+    float sine_value = std::sin(rotation_radian);
+    Eigen::Matrix2f rotation_matrix {
+        {cosine_value, -sine_value},
+        {sine_value, cosine_value},
+    };
+    model.topLeftCorner<2, 2>() = rotation_matrix;
     return model;
 }
 
 Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio, float zNear, float zFar)
 {
     // TODO: Copy-paste your implementation from the previous assignment.
-    Eigen::Matrix4f projection;
-
-    return projection;
+    Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
+    Eigen::Matrix4f perspective_to_orthographic {
+        {zNear, 0, 0, 0},
+        {0, zNear, 0, 0},
+        {0, 0, zNear + zFar, -zNear * zFar},
+        {0, 0, 1, 0},
+    };
+    float yTop = 2 * std::abs(zNear) * std::tan(eye_fov / 2);
+    float yBottom = -yTop;
+    float xRight = aspect_ratio * yTop;
+    float xLeft = -xRight;
+    Eigen::Matrix4f orthographic_scale {
+        {2 / (xRight - xLeft), 0, 0, 0},
+        {0, 2 / (yTop - yBottom), 0, 0},
+        {0, 0, 2 / (zNear - zFar), 0},
+        {0, 0, 0, 1},
+    };
+    Eigen::Matrix4f orthographic_translate {
+        {1, 0, 0, -(xRight + xLeft) / 2},
+        {0, 1, 0, -(yTop + yBottom) / 2},
+        {0, 0, 1, -(zNear + zFar) / 2},
+        {0, 0, 0, 1},
+    };
+    return orthographic_scale * orthographic_translate * perspective_to_orthographic;
 }
 
 int main(int argc, const char** argv)
@@ -110,7 +139,8 @@ int main(int argc, const char** argv)
 
         r.set_model(get_model_matrix(angle));
         r.set_view(get_view_matrix(eye_pos));
-        r.set_projection(get_projection_matrix(45, 1, 0.1, 50));
+        // zNear and zFar should be negative.
+        r.set_projection(get_projection_matrix(45, 1, -0.1, -50));
 
         r.draw(pos_id, ind_id, col_id, rst::Primitive::Triangle);
 
