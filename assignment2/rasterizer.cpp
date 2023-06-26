@@ -141,11 +141,16 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t) {
                 int index = get_index(x, y);
                 if (depth_buf[index] < z_interpolated){
                     depth_buf[index] = z_interpolated;
+                    float color_percent = 0.0f;
+                    if (insideTriangle(x + 0.25f, y + 0.25f, t.v)) {color_percent += 0.25f;}
+                    if (insideTriangle(x + 0.75f, y + 0.25f, t.v)) {color_percent += 0.25f;}
+                    if (insideTriangle(x + 0.25f, y + 0.75f, t.v)) {color_percent += 0.25f;}
+                    if (insideTriangle(x + 0.75f, y + 0.75f, t.v)) {color_percent += 0.25f;}
                     // TODO : set the current pixel (use the set_pixel function) to the color of the triangle (use getColor function) if it should be painted.
                     Eigen::Vector3f point {
                         {(float)x, (float)y, 1.0f}
                     };
-                    set_pixel(point, t.getColor());
+                    set_pixel(point, t.getColor() * color_percent);
                 }
             }
         }
