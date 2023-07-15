@@ -8,6 +8,7 @@
 #include "Vector.hpp"
 #include <limits>
 #include <array>
+#include <cstddef>
 
 class Bounds3
 {
@@ -85,6 +86,7 @@ class Bounds3
     }
 
     inline bool IntersectP(const Ray& ray, const Vector3f& invDir,
+
                            const std::array<int, 3>& dirisNeg) const;
 };
 
@@ -96,7 +98,22 @@ inline bool Bounds3::IntersectP(const Ray& ray, const Vector3f& invDir,
     // invDir: ray direction(x,y,z), invDir=(1.0/x,1.0/y,1.0/z), use this because Multiply is faster that Division
     // dirIsNeg: ray direction(x,y,z), dirIsNeg=[int(x>0),int(y>0),int(z>0)], use this to simplify your logic
     // TODO test if ray bound intersects
-    
+    float timeTable[3][2] = {
+        {(pMin.x - ray.origin.x) * invDir.x, (pMax.x - ray.origin.x) * invDir.x},
+        {(pMin.y - ray.origin.y) * invDir.y, (pMax.y - ray.origin.y) * invDir.y},
+        {(pMin.z - ray.origin.z) * invDir.z, (pMax.z - ray.origin.z) * invDir.z},
+    };
+    float t_enter = std::max({
+        timeTable[0][1 - dirIsNeg[0]],
+        timeTable[1][1 - dirIsNeg[1]], 
+        timeTable[2][1 - dirIsNeg[2]]
+    });
+    float t_exit = std::min({
+        timeTable[0][dirIsNeg[0]],
+        timeTable[1][dirIsNeg[1]],
+        timeTable[2][dirIsNeg[2]]
+    });
+    return t_enter < t_exit && t_exit >= 0;
 }
 
 inline Bounds3 Union(const Bounds3& b1, const Bounds3& b2)
