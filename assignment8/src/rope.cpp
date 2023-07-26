@@ -13,25 +13,42 @@ namespace CGL {
     {
         // TODO (Part 1): Create a rope starting at `start`, ending at `end`, and containing `num_nodes` nodes.
 
-//        Comment-in this part when you implement the constructor
-//        for (auto &i : pinned_nodes) {
-//            masses[i]->pinned = true;
-//        }
-    }
+        masses = std::vector<Mass *>();
+        springs = std::vector<Spring *>();
+        masses.push_back(new Mass(start, node_mass, false));
+        for (int i = 1; i <= num_nodes - 1; ++i) {
+            double t = (double) i / (num_nodes - 1);
+            masses.push_back(new Mass(start * (1.0 - t) + end * t, node_mass, false));
+            springs.push_back(new Spring(masses.at(i-1), masses.at(i), k));
+        }
+        for (auto &i : pinned_nodes) {
+            masses[i]->pinned = true;
+        }
+}
 
     void Rope::simulateEuler(float delta_t, Vector2D gravity)
     {
         for (auto &s : springs)
         {
             // TODO (Part 2): Use Hooke's law to calculate the force on a node
+            Vector2D vector_m1_to_m2 = s->m2->position - s->m1->position;
+            double norm_m1_to_m2 = vector_m1_to_m2.norm();
+            Vector2D unit_m1_to_m2 = vector_m1_to_m2.unit();
+            Vector2D m1_force_from_m2 = s->k * unit_m1_to_m2 * (norm_m1_to_m2 - s->rest_length);
+            s->m1->forces += m1_force_from_m2;
+            s->m2->forces -= m1_force_from_m2;
         }
 
         for (auto &m : masses)
         {
+            float g = 9.8f;
             if (!m->pinned)
             {
                 // TODO (Part 2): Add the force due to gravity, then compute the new velocity and position
-
+                m->forces += m->mass * g * gravity;
+                Vector2D acceleration = m->forces / m->mass;
+                m->velocity += acceleration * delta_t;
+                m->position += m->velocity * delta_t;
                 // TODO (Part 2): Add global damping
             }
 
